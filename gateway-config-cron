@@ -1,0 +1,12 @@
+#!/bin/bash
+
+python /home/centos/gateway-haproxy-config.py | tee /etc/haproxy/haproxy.cfg.new
+DIFF=$(diff /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.new)
+/sbin/haproxy -f /etc/haproxy/haproxy.cfg.new -c
+VALID=$?
+
+if [ "$DIFF" != "" ] && [ $VALID -eq 0 ]
+then
+    mv /etc/haproxy/haproxy.cfg.new /etc/haproxy/haproxy.cfg
+    /usr/sbin/service haproxy restart
+fi

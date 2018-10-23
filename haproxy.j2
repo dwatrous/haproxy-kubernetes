@@ -1,0 +1,36 @@
+global
+        log /dev/log    local0
+        log /dev/log    local1 notice
+        chroot /var/lib/haproxy
+        stats socket /run/haproxy/admin.sock mode 660 level admin
+        stats timeout 30s
+        user haproxy
+        group haproxy
+        daemon
+
+defaults
+        log     global
+        option  dontlognull
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+
+listen {{ master.name }}
+    bind {{ master.bind }} ssl crt /etc/haproxy/api.datacenter1.trinet-k8s.com.pem
+    mode {{ master.mode }}
+    balance {{ master.balance }}
+
+    {% for server in master.servers -%}
+    {{ server }} ssl verify none
+    {% endfor %}
+
+{% for service in services %}
+listen {{ service.name }}
+    bind {{ service.bind }}
+    mode {{ service.mode }}
+    balance {{ service.balance }}
+
+    {% for server in service.servers -%}
+    {{ server }}
+    {% endfor %}
+{% endfor %}
